@@ -2,6 +2,7 @@
 package org.owasp.webgoat.session;
 
 import java.io.IOException;
+import java.security.InvalidParameterException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -9,6 +10,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.ecs.MultiPartElement;
 import org.apache.ecs.html.B;
 import org.apache.ecs.html.TD;
@@ -114,7 +116,7 @@ public class DatabaseUtilities
 	{
 		Class.forName(context.getDatabaseDriver());
 
-		if (context.getDatabaseConnectionString().contains("hsqldb")) return getHsqldbConnection(user, context);
+		if (context.getDatabaseConnectionString().contains("hsqldb")) return getHsqldbConnection(user, context, context.getDatabasePassword());
 
 		String userPrefix = context.getDatabaseUser();
 		String password = context.getDatabasePassword();
@@ -124,14 +126,19 @@ public class DatabaseUtilities
 		{
 			cnfe.printStackTrace();
 			throw new SQLException("Couldn't load the database driver: " + cnfe.getLocalizedMessage());
+		}catch (InvalidParameterException ipe) {
+			throw new SQLException("Couldn't load the database driver: " + ipe.getLocalizedMessage());
 		}
 	}
 
-	private static Connection getHsqldbConnection(String user, WebgoatContext context) throws ClassNotFoundException,
+	private static Connection getHsqldbConnection(String user, WebgoatContext context, String password) throws ClassNotFoundException,
 			SQLException
 	{
 		String url = context.getDatabaseConnectionString().replaceAll("\\$\\{USER\\}", user);
-		return DriverManager.getConnection(url, "sa", "");
+		if (password == null || password.isEmpty()){
+			throw new InvalidParameterException("Password database cannot be null or empty");
+		}
+		return DriverManager.getConnection(url, "sa", password);
 	}
 
 	/**
