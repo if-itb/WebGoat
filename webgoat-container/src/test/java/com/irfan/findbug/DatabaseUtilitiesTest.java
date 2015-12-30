@@ -82,4 +82,37 @@ public class DatabaseUtilitiesTest {
 			assertThat(e.getMessage(), CoreMatchers.equalTo("Couldn't load the database driver: " + "Password database cannot be null or empty"));
 		}
 	}
+	
+	@Test
+	public void testFunctionGetHsqldbConnectionNormalPassword() throws NoSuchFieldException, SQLException, IllegalArgumentException, IllegalAccessException {
+		//prepare for webgoatcontext
+		HttpServlet servlet = new HttpServlet() {
+			@Override
+			public String getInitParameter(String name) {
+				if (WebgoatContext.DATABASE_PASSWORD.equals(name)){
+					return "ini password";
+				}else if (WebgoatContext.DATABASE_DRIVER.equals(name)){
+					return "java.lang.reflect.Field";
+				}
+				return "hsqldb";
+			}
+			
+			@Override
+			public String getServletName() {
+				return "hsqldb";
+			}
+		};
+		WebgoatContext context = new WebgoatContext(servlet);
+		
+		//set private field realConnectionString
+		Field field = WebgoatContext.class.getDeclaredField("realConnectionString");
+		field.setAccessible(true);
+		field.set(context, "hsqldb");
+		
+		try{
+			DatabaseUtilities.getConnection("irfan", context);
+		}catch (Exception e){
+			assertThat(e.getMessage(), CoreMatchers.equalTo("No suitable driver found for hsqldb"));
+		}
+	}
 }
