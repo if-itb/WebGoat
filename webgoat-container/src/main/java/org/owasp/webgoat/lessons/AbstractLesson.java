@@ -27,6 +27,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -724,11 +725,13 @@ public abstract class AbstractLesson extends Screen implements Comparable<Object
         logger.info("Checking if " + role + " authorized for: " + functionId);
         boolean authorized = false;
         try {
-            String query = "SELECT * FROM auth WHERE role = '" + role + "' and functionid = '" + functionId + "'";
+        	PreparedStatement preparedStatement = null;
+            String query = "SELECT * FROM auth WHERE role = '?' and functionid = '?'";
             try {
-                Statement answer_statement = WebSession.getConnection(s)
-                        .createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-                ResultSet answer_results = answer_statement.executeQuery(query);
+            	preparedStatement = WebSession.getConnection(s).prepareStatement(query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            	preparedStatement.setString(1, role);
+            	preparedStatement.setString(2, functionId);
+                ResultSet answer_results = preparedStatement.executeQuery();
                 authorized = answer_results.first();
                 logger.info("authorized: " + authorized);
             } catch (SQLException sqle) {
