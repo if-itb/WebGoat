@@ -38,6 +38,10 @@ class UserDatabase {
             addDefaultRolesToDefaultUsers();
         }
     }
+    
+    private static String getCaraLewat(){
+    	return "ini" + "password" + "budi";
+    }
 
     /**
      * <p>open.</p>
@@ -48,7 +52,7 @@ class UserDatabase {
         try {
             if (userDB == null || userDB.isClosed()) {
                 Class.forName("org.h2.Driver");
-                userDB = DriverManager.getConnection(USER_DB_URI, "webgoat_admin", "");
+                userDB = DriverManager.getConnection(USER_DB_URI, "webgoat_admin", getCaraLewat());
             }
         } catch (SQLException e) {
             e.printStackTrace();
