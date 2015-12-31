@@ -50,6 +50,7 @@ public abstract class Screen {
     /**
      * Description of the Field
      */
+	// ISSUE 6
     public static int MAIN_SIZE = 375;
 
     // private Head head;

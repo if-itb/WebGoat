@@ -2,6 +2,7 @@
 package org.owasp.webgoat.session;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import org.owasp.webgoat.lessons.AbstractLesson;
@@ -953,6 +954,7 @@ public class CreateDB
 	/**
 	 * Start creation of data for WebServices labs
 	 */
+	
 
 	private void createTransactionTable(Connection connection) throws SQLException
 	{
@@ -980,6 +982,8 @@ public class CreateDB
 			System.out.println("Error: unable to create transactions table: " + e.getLocalizedMessage());
 			throw e;
 		}
+		
+		 
 
 		String[] data = new String[] {
 				"'dave', 0, '238-4723-4024', '324-7635-9867', '2008-02-06 21:40:00', 'Mortgage', '150'",
@@ -995,7 +999,10 @@ public class CreateDB
 		{
 			for (int i = 0; i < data.length; i++)
 			{
-				statement.executeUpdate("INSERT INTO Transactions VALUES (" + data[i] + ");");
+				PreparedStatement prep = connection.prepareStatement
+			       	      ("INSERT INTO Transactions VALUES ( ? );");
+				prep.setString(1,data[i]);
+				prep.executeQuery();
 			}
 		} catch (SQLException sqle)
 		{
