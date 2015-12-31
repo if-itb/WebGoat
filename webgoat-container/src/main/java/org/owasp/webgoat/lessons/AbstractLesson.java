@@ -724,12 +724,14 @@ public abstract class AbstractLesson extends Screen implements Comparable<Object
         logger.info("Checking if " + role + " authorized for: " + functionId);
         boolean authorized = false;
         try {
-            String query = "SELECT * FROM auth WHERE role = '" + role + "' and functionid = '" + functionId + "'";
-            try {
-                Statement answer_statement = WebSession.getConnection(s)
-                        .createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-                ResultSet answer_results = answer_statement.executeQuery(query);
-                authorized = answer_results.first();
+            String query = "SELECT * FROM auth WHERE role = ? and functionid = ?";
+        	try {
+                PreparedStatement prepared_query = WebSession.getConnection(s)
+        				.prepareStatement(query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+        		prepared_query.setString(1, role);
+        		prepared_query.setString(2, functionId);
+                ResultSet answer_results = prepared_query.executeQuery();
+        		authorized = answer_results.first();
                 logger.info("authorized: " + authorized);
             } catch (SQLException sqle) {
                 s.setMessage("Error authorizing");
