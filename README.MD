@@ -1,3 +1,6 @@
+
+Report for assignment is on [THIS WIKI](https://github.com/alifanuraniputri/WebGoat/wiki/Report-of-Final-Assignment-IF5192-Secure-Programming)
+
 # WebGoat: A deliberately insecure Web Application
 
 [![Build Status](https://travis-ci.org/WebGoat/WebGoat.svg)](https://travis-ci.org/WebGoat/WebGoat)
