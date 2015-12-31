@@ -75,7 +75,7 @@ public class HammerHead extends HttpServlet {
     /**
      * Description of the Field
      */
-    protected static SimpleDateFormat httpDateFormat;
+    private static SimpleDateFormat httpDateFormat;
 
     /**
      * Set the session timeout to be 2 days
