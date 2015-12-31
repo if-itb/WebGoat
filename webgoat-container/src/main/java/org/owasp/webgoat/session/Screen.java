@@ -50,7 +50,7 @@ public abstract class Screen {
     /**
      * Description of the Field
      */
-    public static int MAIN_SIZE = 375;
+    public static final int MAIN_SIZE = 375;
 
     // private Head head;
     private Element content;

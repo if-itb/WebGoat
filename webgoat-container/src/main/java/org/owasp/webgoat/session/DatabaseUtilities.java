@@ -1,6 +1,8 @@
 
 package org.owasp.webgoat.session;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -131,7 +133,30 @@ public class DatabaseUtilities
 			SQLException
 	{
 		String url = context.getDatabaseConnectionString().replaceAll("\\$\\{USER\\}", user);
-		return DriverManager.getConnection(url, "sa", "");
+                BufferedReader br = null;
+                StringBuffer sb = new StringBuffer("");
+                try {
+
+                    String sCurrentLine;
+
+                    br = new BufferedReader(new FileReader("password.txt"));
+
+                    while ((sCurrentLine = br.readLine()) != null) {
+                        sb.append(sCurrentLine);
+                    }
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        if (br != null) {
+                            br.close();
+                        }
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+		return DriverManager.getConnection(url, "sa", sb.toString());
 	}
 
 	/**

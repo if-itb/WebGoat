@@ -1,9 +1,12 @@
 package org.owasp.webgoat.session;
 
+import java.io.BufferedReader;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 class UserDatabase {
     private Connection userDB;
@@ -18,7 +21,7 @@ class UserDatabase {
 
     private final String QUERY_ALL_USERS = "SELECT username FROM users;";
     private final String QUERY_ALL_ROLES_FOR_USERNAME = "SELECT rolename FROM roles, user_roles, users WHERE roles.id = user_roles.role_id AND user_roles.user_id = users.id AND users.username = ?;";
-    private final String QUERY_TABLE_COUNT = "SELECT count(id) AS count FROM table;";
+    private final String QUERY_TABLE_COUNT = "SELECT count(id) AS count FROM ?;";
 
     private final String DELETE_ALL_ROLES_FOR_USER = "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE username = ?);";
     private final String DELETE_USER = "DELETE FROM users WHERE username = ?;";
@@ -45,10 +48,34 @@ class UserDatabase {
      * @return a boolean.
      */
     public boolean open() {
+        BufferedReader br = null;
+        StringBuffer sb = new StringBuffer("");
+        try {
+
+            String sCurrentLine;
+
+            br = new BufferedReader(new FileReader("password.txt"));
+
+            while ((sCurrentLine = br.readLine()) != null) {
+                sb.append(sCurrentLine);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (br != null) {
+                    br.close();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
         try {
             if (userDB == null || userDB.isClosed()) {
                 Class.forName("org.h2.Driver");
-                userDB = DriverManager.getConnection(USER_DB_URI, "webgoat_admin", "");
+                userDB = DriverManager.getConnection(USER_DB_URI, "webgoat_admin", sb.toString());
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -86,8 +113,9 @@ class UserDatabase {
         int count = 0;
         try {
             open();
-            Statement statement = userDB.createStatement();
-            ResultSet countResult = statement.executeQuery(QUERY_TABLE_COUNT.replace("table", tableName));
+            PreparedStatement statement = userDB.prepareStatement(QUERY_TABLE_COUNT);
+            statement.setString(1, tableName);
+            ResultSet countResult = statement.executeQuery();
             if (countResult.next()) {
                 count = countResult.getInt("count");
             }

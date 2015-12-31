@@ -1,186 +1,127 @@
-# WebGoat: A deliberately insecure Web Application
+# Laporan Tugas IF5192 Static Code Analysis dan Bug Fixing pada WebGoat
+***Oleh : Fawwaz Muhammad***
+***NIM : 23515066***
 
-[![Build Status](https://travis-ci.org/WebGoat/WebGoat.svg)](https://travis-ci.org/WebGoat/WebGoat)
-[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/6101.svg)](https://scan.coverity.com/projects/webgoat-webgoat)
-[![Coverage Status](https://coveralls.io/repos/WebGoat/WebGoat/badge.svg?branch=master&service=github)](https://coveralls.io/github/WebGoat/WebGoat?branch=master)
-[![Codacy Badge](https://api.codacy.com/project/badge/b69ee3a86e3b4afcaf993f210fccfb1d)](https://www.codacy.com/app/dm/WebGoat)
-[![Dependency Status](https://www.versioneye.com/user/projects/562da95ae346d7000e0369aa/badge.svg?style=flat)](https://www.versioneye.com/user/projects/562da95ae346d7000e0369aa)
-
-# Important Information
-
-### The WebGoat Lesson Server, is currently **UNDER MAJOR DEVELOMENT**.
-As of October 2015, this version "7.0-SNAPSHOT" is stable enough for testing.
-
-#### An older stable version and instructions can be found at: [WebGoat-Legacy](https://github.com/WebGoat/WebGoat-Legacy)
-
-WebGoat is a deliberately insecure web application maintained by [OWASP](http://www.owasp.org/) designed to teach web
-application security lessons.
-
-This program is a demonstration of common server-side application flaws. The
-exercises are intended to be used by people to learn about application security and
-penetration testing techniques.
-
-* [Home Page](http://webgoat.github.io)
-* [OWASP Project Home Page](http://www.owasp.org/index.php/Category:OWASP_WebGoat_Project)
-* [Source Code](https://github.com/WebGoat/WebGoat)
-* [Easy-Run Download](https://s3.amazonaws.com/webgoat-war/webgoat-container-7.0-SNAPSHOT-war-exec.jar)
-* [Wiki](https://github.com/WebGoat/WebGoat/wiki)
-* [FAQ (old info):](http://code.google.com/p/webgoat/wiki/FAQ)
-* [Project Leader - Direct to Bruce Mayhew](mailto:webgoat@owasp.org)
-* [Mailing List - WebGoat Community - For most questions](mailto:owasp-webgoat@lists.owasp.org)
-* [Artifacts generated from Continuous Integration](http://webgoat-war.s3-website-us-east-1.amazonaws.com/)
-* [Output from our Travis.CI Build server](https://travis-ci.org/WebGoat/WebGoat)
-
-**WARNING 1:** *While running this program your machine will be extremely
-vulnerable to attack. You should to disconnect from the Internet while using
-this program.*  WebGoat's default configuration binds to localhost to minimize 
-the exposure.
-
-**WARNING 2:** *This program is for educational purposes only. If you attempt
-these techniques without authorization, you are very likely to get caught. If
-you are caught engaging in unauthorized hacking, most companies will fire you.
-Claiming that you were doing security research will not work as that is the
-first thing that all hackers claim.*
-
-# Easy Run ( For non-developers )
-
-Every successful build of the WebGoat Lessons Container and the WebGoat Lessons in our Continuous Integration Server
-creates an "Easy Run" Executable JAR file, which contains the WebGoat Lessons Server, the lessons and a embedded Tomcat server.
-
-You can check for the "Last Modified" date of our "Easy Run" jar file [HERE](http://webgoat-war.s3-website-us-east-1.amazonaws.com/)
-
-The "Easy Run" JAR file offers a no hassle approach to testing and running WebGoat. Follow these instructions if you
-wish to simply try/test/run the current development version of WebGoat
-
-### Prerequisites:
-* Java VM >= 1.6 installed ( JDK 1.7 recommended)
-
-## Easy Run Instructions:
-
-#### 1. Download the easy run executable jar file which contains all the lessons and a embedded Tomcat server:
-
-https://s3.amazonaws.com/webgoat-war/webgoat-container-7.0-SNAPSHOT-war-exec.jar
-
-#### 2. Run it using java:
-
-Open a command shell/window, browse to where you downloaded the easy run jar and type:
-
-```Shell
-java -jar webgoat-container-7.0-SNAPSHOT-war-exec.jar
+### A. Pencarian Bug menggunakan FindBugs
+Pada tugas ini saya menggunakan Findbugs yang terintegrasi dengan NetBeans. Setelah melakukan pemeriksaan, didapatkan banyak bug. Namun karena concern matakuliah ini hanya pada aspek keamanan, kategori yang diperiksa dalam tugas ini hanya kategori Security dan Malicious Code Vulnerability.
+![Screenshot hasil findbugs](https://raw.githubusercontent.com/fawwaz/WebGoat/master/laporan/findbugs.JPG)
+### B. Bug Fixing
+#### B.1 Security Vulnerability
+##### B.1.1 Empty Database Password (UserDatabase.java:51)
+Webgoat menggunakan H2 sebagai DBMS. H2 adalah sistem database yang menyimpan data di dalam memori. Mengacu pada [dokumentasi H2](http://www.h2database.com/html/tutorial.html), H2 secara otomatis membuat database baru jika databasenya belum pernah ada sebelumnya. User yang pertamakali menciptakan database akan dianggap sebagai administrator. Sayangnya webgoat membuat koneksi ke H2 seperti yang dicontohkan oleh H2 (dengan string kosong), hal ini akan sangat rawan karena H2 bekerja di memory. Seandainya ada program jahat yang mencoba mengeksploitasi memori dan menggunakan default password seperti yang dicontohkan oleh H2 dalam tutorialnya, informasi ini akan bocor. Oleh karena itu dalam proses bug fixing digunakan password dari file external.
 ```
+public boolean open() {
+        BufferedReader br = null;
+        StringBuffer sb = new StringBuffer("");
+        try {
 
-#### 3. Browse to [http://localhost:8080/WebGoat](http://localhost:8080/WebGoat) and happy hacking !
+            String sCurrentLine;
 
-#### (Optional) If you would like to change the port or other options, use the help command for guidance:
+            br = new BufferedReader(new FileReader("password.txt"));
 
-```Shell
-java -jar webgoat-container-7.0-SNAPSHOT-war-exec.jar --help
+            while ((sCurrentLine = br.readLine()) != null) {
+                sb.append(sCurrentLine);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (br != null) {
+                    br.close();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        try {
+            if (userDB == null || userDB.isClosed()) {
+                Class.forName("org.h2.Driver");
+                userDB = DriverManager.getConnection(USER_DB_URI, "webgoat_admin", sb.toString());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
 ```
-
-# For Developers
-
-Follow these instructions if you wish to run Webgoat and modify the source code as well.
-
-### Prerequisites:
-
-* Java >= 1.6 ( JDK 1.7 recommended )
-* Maven > 2.0.9
-* Your favorite IDE, with Maven awareness: Netbeans/IntelliJ/Eclipse with m2e installed.
-* Git, or Git support in your IDE
-
-## The Easy Way: Developer Edition run using Linux or Mac
-The __webgoat_developer_bootstrap.sh__ script will clone the necessary repositories, call the maven goals in order
-launch Tomcat listening on localhost:8080
-
-```Shell
-mkdir WebGoat-Workspace
-cd WebGoat-Workspace
-curl -o webgoat_developer_bootstrap.sh https://raw.githubusercontent.com/WebGoat/WebGoat/master/webgoat_developer_bootstrap.sh
-sh webgoat_developer_bootstrap.sh
+##### B.1.2 Empty Database Password (DatabaseUtilities.java:134)
+Sama seperti poin sebelumnya. Perbaikan dilakukan dengan 
+##### B.1.3 Non Constant String passed to execute method on SQL Statement(AbstractLesson.java:731)
+Dalam file AbstractLesson, query yang dibentuk menggunakan konkatenasi string. Hal ini sangat rawan terhadap injection, oleh karena itu diperbaiki dengan prepared statement.
 ```
-
-## The Manual Way: Developer Edition!
-
-#### Cloning the Lesson Server and the Lessons project:
-
-Open a command shell/window, navigate to where you wish to download the source and type:
-
-```Shell
-git clone https://github.com/WebGoat/WebGoat.git
-git clone https://github.com/WebGoat/WebGoat-Lessons.git
+public boolean isAuthorized(WebSession s, String role, String functionId) {
+        logger.info("Checking if " + role + " authorized for: " + functionId);
+        boolean authorized = false;
+        try {
+            String query = "SELECT * FROM auth WHERE role = ? and functionid = ?";
+            try {
+                PreparedStatement statement = WebSession.getConnection(s).prepareStatement(query);
+                statement.setString(1, role);
+                statement.setString(2, functionId);
+                ResultSet answer_results = statement.executeQuery();
+                authorized = answer_results.first();
+                logger.info("authorized: " + authorized);
+            } catch (SQLException sqle) {
+                s.setMessage("Error authorizing");
+                logger.error("Error authorizing", sqle);
+            }
+        } catch (Exception e) {
+            s.setMessage("Error authorizing");
+            logger.error("Error authorizing", e);
+        }
+        return authorized;
+    }
 ```
-
-#### Now let's start by compiling the WebGoat Lessons server.
-
-```Shell
-cd WebGoat
-mvn clean compile install
-cd ..
+##### B.1.4 Non Constant String passed to execute method on SQL Statement(ViewDatabase.java:82)
+WebGoat adalah project untuk menjelaskan secara langsung vulnerability yang sering ditemui di lapangan. File ViewDatabase.java memang didesain untuk menerima input SQL raw dari Websession milik User. Oleh karena itu tidak perlu ada perubahan pada file ini.
+##### B.1.5 Non Constant String passed to execute method on SQL Statement(CreateDB.java:998)
+![Konkatenasi aman](https://raw.githubusercontent.com/fawwaz/WebGoat/master/laporan/aman.JPG)
+Dalam file CreateDB, digunakan konkatenasi string. Meskipun demikian, string yang digunakan untuk konkatenasi bukan berasal dari input user melainkan di Hardcode pada file(Dapat dilihat pada gambar diatas). Oleh karena itu konkatenasi ini dapat dikatakan aman.
+##### B.1.6 Non Constant String passed to execute method on SQL Statement(UserDatabase.java:90)
+Perbaikan dilakukan dengan mengubah kode semula sehingga menjadi menggunakan preparedStatement. Perubahan ada pada baris 
 ```
-
-#### Before you can run the project, we need to compile the lessons and copy them over:
-**If you don't run this step, you will not have any Lessons to work with!**
-
-```Shell
-cd WebGoat-Lessons
-mvn package
-cp target/plugins/*.jar ../WebGoat/webgoat-container/src/main/webapp/plugin_lessons/
-cd ..
+private final String QUERY_TABLE_COUNT = "SELECT count(id) AS count FROM ?;";
 ```
-
-#### Now we are ready to run the project. There are 3 options you can choose from to run the project:
-
-Then you can run the project with one of the steps below (From the WebGoat folder not WebGoat-Lessons):
-
-#### Option #1: Using the Maven-Tomcat Plugin
-The __maven tomcat7:run-war__ goal runs the project in an embedded tomcat:
-
-```Shell
-cd WebGoat
-mvn -pl webgoat-container tomcat7:run-war
+dan baris 
 ```
-
-Browse to [http://localhost:8080/WebGoat](http://localhost:8080/WebGoat) and happy hacking !
-
-#### Option #2: Java executable JAR
-The __maven package__ goal generates an executable .jar file:
-
-```Shell
-cd WebGoat
-mvn package
-cd webgoat-container/target
-java -jar webgoat-container-7.0-SNAPSHOT-war-exec.jar http://localhost:8080/WebGoat
+public int getTableCount(String tableName) {
+        int count = 0;
+        try {
+            open();
+            PreparedStatement statement = userDB.prepareStatement(QUERY_TABLE_COUNT);
+            statement.setString(1, tableName);
+            ResultSet countResult = statement.executeQuery();
+            if (countResult.next()) {
+                count = countResult.getInt("count");
+            }
+            countResult.close();
+            statement.close();
+            close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            count = -1;
+        }
+        return count;
+    }
 ```
-
-Browse to [http://localhost:8080/WebGoat](http://localhost:8080/WebGoat) and happy hacking !
-
-#### Option #3: Deploy the WebGoat WAR file in your local Tomcat or other Application Serve:
-The __maven package__ goal generates a .war file that can deployed into an Application Server, such as Tomcat
-
-```Shell
-cd WebGoat
-mvn package
-cp webgoat-container/target/webgoat-container-7.0-SNAPSHOT.war <your_tomcat_directory>/webapps/
+#### B.2 Malicious Code Vulnerability
+##### B.2.1 Field Should Be Package Protected (HammerHead.java:78)
+Access modifier `httpDateFormat` telah diubah menjadi private 
 ```
-
-Browse to [http://localhost:8080/WebGoat](http://localhost:8080/WebGoat) and happy hacking !
-
-# Debugging and Troubleshooting
-
-## Reloading plugins and lessons
-
-If you want to __reload all the plugin and lessons__, open a new browser tab and visit the following url:
-
-[http://localhost:8080/WebGoat/service/reloadplugins.mvc](http://localhost:8080/WebGoat/service/reloadplugins.mvc)
-
-After the plugin reload is complete, _reloading a message_ will appear and you can refresh the __main WebGoat browser tab__.
-
-## Debugging label properties
-
-To be able to see which labels are loaded through a property file, open a new browser tab and visit the following url:
-
-[http://localhost:8080/WebGoat/service/debug/labels.mvc](http://localhost:8080/WebGoat/service/debug/labels.mvc)
-
-Switch back to the main WebGoat broswer tab and __reload the main WebGoat browser tab__.
-
-After the reload is complete, all labels which where loaded from a property file will be __marked green__.
+private static SimpleDateFormat httpDateFormat;
+```
+##### B.2.2 Field isn't final but should be (Screen.java:53)
+field `MAIN_SIZE` diubah menjadi final agar tidak dapat diubah
+```
+public static final int MAIN_SIZE = 375;
+```
+##### B.2.3 Field isn't final but can't be protected from malicious Code(Course.java:70)
+Mengacu pada [dokumentasi findbugs](http://findbugs.sourceforge.net/bugDescriptions.html#MS_CANNOT_BE_FINAL) jenis bug seperti ini sulit untuk diselesaikan karena di satu sisi harus diamankan dengan membuatnya menjadi konstanta (final), tapi di sisi lain harus dapat diubah. Oleh karena itu bug ini dibiarkan.
+### Kesimpulan
+Hingga laporan ini dibuat, saya merasa kesulitan untuk membuat testCase karena seluruh kesalahan / vulnerability bukan terdapat pada parameter fungsi. Kalaupun ada yang dapat diubah dengan menambahkan parameter pada fungsi tertentu, perubahan ini berkonsekuensi harus mengubah seluruh kode yang menggunakan fungsi tersebut. Selain itu, beberapa fungsi / field memiliki access modifier bukan public (private/protected), mengacu pada tulisan [Bill Venners](http://www.artima.com/suiterunner/private.html) pengujian private methods tidak bsia dilakukan. Satu-satunya cara untuk menguji private methods adalah dengan menggunakan fungsi publik lain yang memanggil fungsi private ini dan ***mengasumsikan*** jika fungsi publik ini berjalan baik, maka fungsi private sudah berjalan baik.
