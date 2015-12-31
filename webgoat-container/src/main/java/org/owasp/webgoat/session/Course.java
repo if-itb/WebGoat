@@ -67,6 +67,7 @@ public class Course {
 
     private final List<AbstractLesson> lessons = new LinkedList<AbstractLesson>();
 
+    //ISSUE 4
     private final static String PROPERTIES_FILENAME = HammerHead.propertiesPath;
 
     private WebgoatProperties properties = null;

@@ -75,6 +75,7 @@ public class HammerHead extends HttpServlet {
     /**
      * Description of the Field
      */
+    // ISSUE 5
     protected static SimpleDateFormat httpDateFormat;
 
     /**
