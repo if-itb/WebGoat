@@ -51,7 +51,7 @@ public boolean open() {
     }
 ```
 ##### B.1.2 Empty Database Password (DatabaseUtilities.java:134)
-Sama seperti poin sebelumnya.
+Sama seperti poin sebelumnya. Perbaikan dilakukan dengan 
 ##### B.1.3 Non Constant String passed to execute method on SQL Statement(AbstractLesson.java:731)
 Dalam file AbstractLesson, query yang dibentuk menggunakan konkatenasi string. Hal ini sangat rawan terhadap injection, oleh karena itu diperbaiki dengan prepared statement.
 ```
@@ -84,8 +84,44 @@ WebGoat adalah project untuk menjelaskan secara langsung vulnerability yang seri
 ![Konkatenasi aman](https://raw.githubusercontent.com/fawwaz/WebGoat/master/laporan/aman.JPG)
 Dalam file CreateDB, digunakan konkatenasi string. Meskipun demikian, string yang digunakan untuk konkatenasi bukan berasal dari input user melainkan di Hardcode pada file(Dapat dilihat pada gambar diatas). Oleh karena itu konkatenasi ini dapat dikatakan aman.
 ##### B.1.6 Non Constant String passed to execute method on SQL Statement(UserDatabase.java:90)
+Perbaikan dilakukan dengan mengubah kode semula sehingga menjadi menggunakan preparedStatement. Perubahan ada pada baris 
+```
+private final String QUERY_TABLE_COUNT = "SELECT count(id) AS count FROM ?;";
+```
+dan baris 
+```
+public int getTableCount(String tableName) {
+        int count = 0;
+        try {
+            open();
+            PreparedStatement statement = userDB.prepareStatement(QUERY_TABLE_COUNT);
+            statement.setString(1, tableName);
+            ResultSet countResult = statement.executeQuery();
+            if (countResult.next()) {
+                count = countResult.getInt("count");
+            }
+            countResult.close();
+            statement.close();
+            close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            count = -1;
+        }
+        return count;
+    }
+```
 #### B.2 Malicious Code Vulnerability
 ##### B.2.1 Field Should Be Package Protected (HammerHead.java:78)
+Access modifier `httpDateFormat` telah diubah menjadi private 
+```
+private static SimpleDateFormat httpDateFormat;
+```
 ##### B.2.2 Field isn't final but should be (Screen.java:53)
+field `MAIN_SIZE` diubah menjadi final agar tidak dapat diubah
+```
+public static final int MAIN_SIZE = 375;
+```
 ##### B.2.3 Field isn't final but can't be protected from malicious Code(Course.java:70)
+Mengacu pada [dokumentasi findbugs](http://findbugs.sourceforge.net/bugDescriptions.html#MS_CANNOT_BE_FINAL) jenis bug seperti ini sulit untuk diselesaikan karena di satu sisi harus diamankan dengan membuatnya menjadi konstanta (final), tapi di sisi lain harus dapat diubah. Oleh karena itu bug ini dibiarkan.
 ### Kesimpulan
+Hingga laporan ini dibuat, saya merasa kesulitan untuk membuat testCase karena seluruh kesalahan / vulnerability bukan terdapat pada parameter fungsi. Kalaupun ada yang dapat diubah dengan menambahkan parameter pada fungsi tertentu, perubahan ini berkonsekuensi harus mengubah seluruh kode yang menggunakan fungsi tersebut. Selain itu, beberapa fungsi / field memiliki access modifier bukan public (private/protected), mengacu pada tulisan [Bill Venners](http://www.artima.com/suiterunner/private.html) pengujian private methods tidak bsia dilakukan. Satu-satunya cara untuk menguji private methods adalah dengan menggunakan fungsi publik lain yang memanggil fungsi private ini dan ***mengasumsikan*** jika fungsi publik ini berjalan baik, maka fungsi private sudah berjalan baik.
