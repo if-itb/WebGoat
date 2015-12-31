@@ -1,6 +1,9 @@
 
 package org.owasp.webgoat.session;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -9,6 +12,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+
 import org.apache.ecs.MultiPartElement;
 import org.apache.ecs.html.B;
 import org.apache.ecs.html.TD;
@@ -131,7 +136,14 @@ public class DatabaseUtilities
 			SQLException
 	{
 		String url = context.getDatabaseConnectionString().replaceAll("\\$\\{USER\\}", user);
-		return DriverManager.getConnection(url, "sa", "");
+		
+		//ISSUE 1
+		
+		Properties info = new Properties( );
+		info.put( "username", "sa" );
+		info.put( "password", "" );
+		
+		return DriverManager.getConnection(url, info);
 	}
 
 	/**

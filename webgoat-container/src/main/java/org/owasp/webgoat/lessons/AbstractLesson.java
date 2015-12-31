@@ -1,5 +1,21 @@
 package org.owasp.webgoat.lessons;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.ecs.Element;
 import org.apache.ecs.ElementContainer;
 import org.apache.ecs.StringElement;
@@ -19,21 +35,6 @@ import org.owasp.webgoat.util.BeanProvider;
 import org.owasp.webgoat.util.LabelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  *************************************************************************************************
@@ -724,11 +725,16 @@ public abstract class AbstractLesson extends Screen implements Comparable<Object
         logger.info("Checking if " + role + " authorized for: " + functionId);
         boolean authorized = false;
         try {
-            String query = "SELECT * FROM auth WHERE role = '" + role + "' and functionid = '" + functionId + "'";
+            String query = "SELECT * FROM auth WHERE role = ? and functionid = ?";
             try {
-                Statement answer_statement = WebSession.getConnection(s)
-                        .createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-                ResultSet answer_results = answer_statement.executeQuery(query);
+                
+            	//ISSUE 3
+                PreparedStatement updateemp = WebSession.getConnection(s).prepareStatement
+                	      (query);
+                	      updateemp.setString(1,role);
+                	      updateemp.setString(2,functionId);
+                
+                ResultSet answer_results = updateemp.executeQuery();
                 authorized = answer_results.first();
                 logger.info("authorized: " + authorized);
             } catch (SQLException sqle) {
