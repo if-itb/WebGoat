@@ -2,6 +2,7 @@
 package org.owasp.webgoat.session;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import org.owasp.webgoat.lessons.AbstractLesson;
@@ -956,12 +957,12 @@ public class CreateDB
 
 	private void createTransactionTable(Connection connection) throws SQLException
 	{
-		Statement statement = connection.createStatement();
 
 		try
 		{
 			String dropTable = "DROP TABLE transactions";
-			statement.executeUpdate(dropTable);
+			PreparedStatement prepared_statement = connection.prepareStatement(dropTable);
+			prepared_statement.execute();
 		} catch (SQLException e)
 		{
 			System.out.println("Info - Could not drop transactions table");
@@ -974,7 +975,8 @@ public class CreateDB
 					+ "to_account VARCHAR(16) NOT NULL, " + "transactionDate TIMESTAMP NOT NULL, "
 					+ "description VARCHAR(255) NOT NULL, " + "amount INTEGER NOT NULL" + ")";
 
-			statement.executeUpdate(createTable);
+			PreparedStatement prepared_statement = connection.prepareStatement(createTable);
+			prepared_statement.execute();
 		} catch (SQLException e)
 		{
 			System.out.println("Error: unable to create transactions table: " + e.getLocalizedMessage());
@@ -995,7 +997,9 @@ public class CreateDB
 		{
 			for (int i = 0; i < data.length; i++)
 			{
-				statement.executeUpdate("INSERT INTO Transactions VALUES (" + data[i] + ");");
+				PreparedStatement prepared_statement = connection.prepareStatement("INSERT INTO Transactions VALUES (?);");
+				prepared_statement.setString(1, data[i]);
+				prepared_statement.execute();
 			}
 		} catch (SQLException sqle)
 		{
