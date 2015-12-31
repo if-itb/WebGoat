@@ -1,9 +1,12 @@
 package org.owasp.webgoat.session;
 
+import java.io.BufferedReader;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 class UserDatabase {
     private Connection userDB;
@@ -45,10 +48,34 @@ class UserDatabase {
      * @return a boolean.
      */
     public boolean open() {
+        BufferedReader br = null;
+        StringBuffer sb = new StringBuffer("");
+        try {
+
+            String sCurrentLine;
+
+            br = new BufferedReader(new FileReader("password.txt"));
+
+            while ((sCurrentLine = br.readLine()) != null) {
+                sb.append(sCurrentLine);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (br != null) {
+                    br.close();
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
         try {
             if (userDB == null || userDB.isClosed()) {
                 Class.forName("org.h2.Driver");
-                userDB = DriverManager.getConnection(USER_DB_URI, "webgoat_admin", "");
+                userDB = DriverManager.getConnection(USER_DB_URI, "webgoat_admin", sb.toString());
             }
         } catch (SQLException e) {
             e.printStackTrace();
