@@ -131,7 +131,7 @@ public class DatabaseUtilities
 			SQLException
 	{
 		String url = context.getDatabaseConnectionString().replaceAll("\\$\\{USER\\}", user);
-		return DriverManager.getConnection(url, "sa", "");
+		return DriverManager.getConnection(url, "sa", "sa-password");
 	}
 
 	/**
